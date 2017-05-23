@@ -1,1 +1,0 @@
-# alexa_cracow_air_polution
