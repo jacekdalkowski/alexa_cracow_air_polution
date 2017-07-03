@@ -2,6 +2,8 @@ from pymongo import MongoClient
 from lxml import html
 import requests
 import datetime
+import pprint
+import json
 
 def is_float(value):
 	try:
@@ -10,14 +12,20 @@ def is_float(value):
 	except:
 		return False
 
-def update_db(pm_10_level):
+def save_air_data(air_data):
 	mongo_client = MongoClient('mongodb://airpolution-db:27017')
 	airpolution_db = mongo_client['airpolution']
 	airpolution_col = airpolution_db['airpolution']
 
-	airpolution_col.update_one({'_id': 1}, {'$set': {'_id': 1, 'pm_10': pm_10_level, 'timestamp': datetime.datetime.utcnow() }}, True)
+	airpolution_col.update_one(
+		{'app': 'cracow'}, 
+		{'$set': {
+			'air': air_data,
+		 	'timestamp': datetime.datetime.utcnow() 
+		}}, 
+		upsert=True)
 
-def fetch_pm_10_level():
+def fetch_air_data():
 	#page = requests.get('http://powietrzewkrakowie.pl/')
 	page = requests.get('http://powietrze.gios.gov.pl/pjp/current/station_details/table/10121/1/0')
 	dom = html.fromstring(page.content)
@@ -29,10 +37,39 @@ def fetch_pm_10_level():
 
 	latest_pm_10_level = quality[-1]
 	if latest_pm_10_level and is_float(latest_pm_10_level):
-		return float(quality[-1])
+		latest_pm_10_level_float = float(latest_pm_10_level)
+		return {
+			'timestamp': datetime.datetime.utcnow(),
+			'pm_10': latest_pm_10_level_float
+		}
 	return None
 
-pm_10_level = fetch_pm_10_level()
-print 'pm_10 level fetched: ' + str(pm_10_level)
-update_db(pm_10_level)
+def save_weather_data(weather_data):
+	mongo_client = MongoClient('mongodb://airpolution-db:27017')
+	airpolution_db = mongo_client['airpolution']
+	airpolution_col = airpolution_db['airpolution']
+
+	airpolution_col.update_one(
+		{'app': 'cracow'}, 
+		{'$set': {
+			'weather': weather_data,
+		 	'timestamp': datetime.datetime.utcnow() 
+		}}, 
+		upsert=True)
+
+def fetch_weather_data(city_id):
+	url = 'http://api.openweathermap.org/data/2.5/forecast?id=' + city_id + '&APPID=01a36ac04b1772f77c02af558e929933'
+	weather_data_response = requests.get(url)
+	weather_data = json.loads(weather_data_response.content)
+	weather_data['timestamp'] = datetime.datetime.utcnow()
+	pprint.pprint(weather_data)
+	return weather_data
+
+air_data = fetch_air_data()
+print 'air_data fetched: ' + str(air_data)
+save_air_data(air_data)
+
+weather_data = fetch_weather_data('3094802')
+print 'weather_data fetched: ' + str(weather_data)
+save_weather_data(weather_data)
 
