@@ -1,0 +1,12 @@
+ FROM node:boron
+
+# Create app directory
+RUN mkdir -p /air_pollution
+#WORKDIR /homepage
+
+# Install app dependencies
+COPY alexa_cracow_air_polution /air_pollution
+RUN cd /air_pollution; npm install
+
+EXPOSE 3003
+CMD PORT=3003 ./air_pollution/bin/www
