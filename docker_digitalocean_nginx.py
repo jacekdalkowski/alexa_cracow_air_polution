@@ -21,6 +21,6 @@ def build_nginx_continer_in_remote_host(ssh):
 
 def run_nginx_container(ssh):
 	print "Starting nginx container in remote host."
-	result = ssh("docker run -d -p 80:80 -p 443:443 --link homepage:homepage --link airpolution-dev-api:airpolution-dev-api --name nginx nginx")
+	result = ssh("docker run -d -p 80:80 -p 443:443 --link homepage:homepage --link airpolution-dev-api:airpolution-dev-api --link airpollution-prod1-api:airpollution-prod1-api --link airpollution-prod2-api:airpollution-prod2-api --name nginx nginx")
 	print "Starting nginx container in remote host result: "
 	print result
