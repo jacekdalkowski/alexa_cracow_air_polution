@@ -4,11 +4,7 @@ var router = express.Router();
 
 router.use(alexaVerifier);
 
-router.get('/', function(req, res, next) {
-  res.send({ 'test': 'value' });
-});
-
-router.post('/airpolution', function(req, res, next) {
+router.post('/', function(req, res, next) {
   var collection = req.app.locals.db.collection('airpolution');
 
   collection
