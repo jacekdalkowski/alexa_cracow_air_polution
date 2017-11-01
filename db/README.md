@@ -10,4 +10,5 @@ use airpolution
 // show collections
 // db.getCollectionNames()
 db.airpolution.find()
+db.airpolution.remove( { } )
 
