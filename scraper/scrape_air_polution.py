@@ -5,6 +5,8 @@ import datetime
 import pprint
 import json
 
+scrape_script_version = '1.0.0'
+
 def is_float(value):
 	try:
 		float(value)
@@ -62,14 +64,36 @@ def fetch_weather_data(city_id):
 	weather_data_response = requests.get(url)
 	weather_data = json.loads(weather_data_response.content)
 	weather_data['timestamp'] = datetime.datetime.utcnow()
-	pprint.pprint(weather_data)
 	return weather_data
 
+def save_scrape_status(state, timestamp, scrape_script_version):
+	mongo_client = MongoClient('mongodb://airpolution-db:27017')
+	airpolution_db = mongo_client['airpolution']
+	airpolution_col = airpolution_db['airpolution']
+
+	airpolution_col.update_one(
+		{'app': 'cracow'}, 
+		{'$set': {
+			'status': {
+				'state': state,
+				'timestamp': timestamp,
+			 	'scrapeScriptVersion': scrape_script_version
+			}
+		}}, 
+		upsert=True)
+
+
+save_scrape_status('start', datetime.datetime.utcnow(), scrape_script_version)
+
 air_data = fetch_air_data()
-print 'air_data fetched: ' + str(air_data)
+print 'air_data fetched: '
+pprint.pprint(air_data)
 save_air_data(air_data)
 
 weather_data = fetch_weather_data('3094802')
-print 'weather_data fetched: ' + str(weather_data)
+print 'weather_data fetched: '
+pprint.pprint(weather_data)
 save_weather_data(weather_data)
+
+save_scrape_status('finished', datetime.datetime.utcnow(), scrape_script_version)
 

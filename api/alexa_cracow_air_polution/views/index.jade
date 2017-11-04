@@ -1,5 +1,20 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  h1 Welcome to Air server
+  h3 Cracow
+  div(style='padding-left: 10px;')
+    h5 air
+    p(style='white-space:pre; padding-left: 10px;')
+      | air pm10 level: 
+      | #{air.air.pm_10}
+    h5 scrape status
+    p(style='white-space:pre; padding-left: 10px;')
+      | timestamp: 
+      | #{status.status.timestamp}
+      | 
+      | state: 
+      | #{status.status.state}
+      | 
+      | script version: 
+      | #{status.status.scrapeScriptVersion}

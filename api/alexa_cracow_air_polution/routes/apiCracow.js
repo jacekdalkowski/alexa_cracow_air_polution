@@ -4,8 +4,9 @@ var bodyParser = require('body-parser');
 var router = express.Router();
 var log4js = require('log4js');
 var logger = log4js.getLogger('grido.web.identity.handlers.users_handler');
+var Db = require('../db/db.js');
 
-//router.use(alexaVerifier);
+router.use(alexaVerifier);
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: false }));
 
@@ -14,50 +15,31 @@ intentToHandler.set('GetAirQuality', handleGetAirQualityRequest);
 intentToHandler.set('GetWeatherForecast', handleGetWeatherForecastRequest);
 
 function handleGetAirQualityRequest(req, res, next) {
-  var app = 'cracow';
-  var collection = req.app.locals.db.collection('airpolution');
+  var app = 'cracow',
+    collection = req.app.locals.db.collection('airpolution'),
+    db = new Db(collection);
 
-  collection.aggregate([
-      { $match: {'app': { $eq: app }}},
-      { $project : { 
-        'air' : 1 } }])
-  .toArray(function(err, items) {
-    if(!err && items.length == 1){
-      res.json(buildGetAirQualityResponse(items[0]));
-    }else{
-      if(err){
-        logger.error('An error occured when fetching air info for app ' + app + ': ' + err);
-      }
-      if(items.length != 1){
-        logger.error('An error occured when fetching air info for app ' + app + ': number of items found is: ' + items.length + ". Should be 1.");
-      }
+  db.getAirQuality(app,
+    function onSuccess(item){
+      res.json(buildGetAirQualityResponse(item));
+    },
+    function onError(){
       res.json(buildErrorResponse());
-    }
-  });
+    });
 }
 
 function handleGetWeatherForecastRequest(req, res, next) {
-  var collection = req.app.locals.db.collection('airpolution');
+  var app = 'cracow',
+    collection = req.app.locals.db.collection('airpolution'),
+    db = new Db(collection);
 
-  collection.aggregate([
-      { $match: {'app': { $eq: 'cracow' }}},
-      { $unwind : '$weather.list' },  
-      { $match : {'weather.list.dt' : { $gte: 1499520000 } } },  
-      { $project : { 
-        'weather.dt' : '$weather.list.dt',  
-        'weather.temp' : '$weather.list.main.temp', 
-        'weather.descriptions' : '$weather.list.weather.description' } }])
-    .toArray(function(err, items) {
-      res.json(buildGetWeatherForecastResponse(items[0]));
+  db.getWeather(app,
+    function onSuccess(item){
+      res.json(buildGetWeatherForecastResponse(item));
+    },
+    function onError(){
+      res.json(buildErrorResponse());
     });
-
-  /*
-  collection
-  .find()
-  .toArray(function(err, items) {
-    res.json(buildAlexaResponse(items[0]));
-  });
-  */
 }
 
 router.post('/', function(req, res, next) {
