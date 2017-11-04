@@ -9,4 +9,4 @@ COPY alexa_cracow_air_polution /air_pollution
 RUN cd /air_pollution; npm install
 
 EXPOSE 3002
-CMD PORT=3002 ./air_pollution/bin/www
+CMD PORT=3002 ./air_pollution/runners/master.run.js

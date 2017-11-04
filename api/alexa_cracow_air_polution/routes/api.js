@@ -2,7 +2,7 @@ var express = require('express');
 var alexaVerifier = require('alexa-verifier-middleware');
 var router = express.Router();
 
-router.use(alexaVerifier);
+//router.use(alexaVerifier);
 
 router.post('/', function(req, res, next) {
   var collection = req.app.locals.db.collection('airpolution');

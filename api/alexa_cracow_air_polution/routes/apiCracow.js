@@ -2,6 +2,8 @@ var express = require('express');
 var alexaVerifier = require('alexa-verifier-middleware');
 var bodyParser = require('body-parser');
 var router = express.Router();
+var log4js = require('log4js');
+var logger = log4js.getLogger('grido.web.identity.handlers.users_handler');
 
 //router.use(alexaVerifier);
 router.use(bodyParser.json());
@@ -12,14 +14,25 @@ intentToHandler.set('GetAirQuality', handleGetAirQualityRequest);
 intentToHandler.set('GetWeatherForecast', handleGetWeatherForecastRequest);
 
 function handleGetAirQualityRequest(req, res, next) {
+  var app = 'cracow';
   var collection = req.app.locals.db.collection('airpolution');
 
   collection.aggregate([
-      { $match: {'app': { $eq: 'cracow' }}},
+      { $match: {'app': { $eq: app }}},
       { $project : { 
         'air' : 1 } }])
   .toArray(function(err, items) {
-    res.json(buildGetAirQualityResponse(items[0]));
+    if(!err && items.length == 1){
+      res.json(buildGetAirQualityResponse(items[0]));
+    }else{
+      if(err){
+        logger.error('An error occured when fetching air info for app ' + app + ': ' + err);
+      }
+      if(items.length != 1){
+        logger.error('An error occured when fetching air info for app ' + app + ': number of items found is: ' + items.length + ". Should be 1.");
+      }
+      res.json(buildErrorResponse());
+    }
   });
 }
 
@@ -50,7 +63,8 @@ function handleGetWeatherForecastRequest(req, res, next) {
 router.post('/', function(req, res, next) {
   var intentName = req.body.request.intent.name;
   if(intentToHandler.has(intentName)){
-    intentToHandler.get(intentName)(req, res, next);
+    var intentHandler = intentToHandler.get(intentName);
+    intentHandler(req, res, next);
   }else{
     res.status(404).send('Not found');
   }
@@ -112,5 +126,23 @@ function buildGetWeatherForecastResponse(weatherData){
 
   return r;
 }
+
+function buildErrorResponse(){
+  
+    var r = { 
+    "version": "0.0.1", 
+    "response": { 
+      "outputSpeech": { 
+        "type": "SSML", 
+        "ssml": "<speak>" +
+                  "An error occured. Please try again later." + 
+                "</speak>", 
+      }
+    },
+    "shouldEndSession": true 
+    };
+  
+    return r;
+  }
 
 module.exports = router
